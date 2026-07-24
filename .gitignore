@@ -1,4 +1,12 @@
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
+# O conteúdo vem do repo do vault em tempo de build — nunca commitar aqui
+content/
+
+# Artefatos de build
+dist-public/
+dist-private/
+public/
+quartz-build/
+
+# Node
+node_modules/
+.DS_Store

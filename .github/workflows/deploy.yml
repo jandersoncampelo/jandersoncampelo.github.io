@@ -1,0 +1,102 @@
+name: Deploy vault (public + private)
+
+on:
+  workflow_dispatch: {} # botão de deploy manual na aba Actions
+  push:
+    branches: [main] # dispara ao mudar config/layout DESTE repo
+  schedule:
+    - cron: "0 */6 * * *" # rebuild a cada 6h p/ pegar mudanças no vault
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-vault
+  cancel-in-progress: true
+
+env:
+  VAULT_REPO: "jandersoncampelo/the-vault" # owner/repo do vault (privado)
+  # >>> AJUSTAR APÓS PROVISIONAR O SWA (B2 do runbook) <<<
+  SWA_HOSTNAME: "SEU_HOST.azurestaticapps.net" # de: az staticwebapp show ... --query defaultHostname
+  # Após validar um build estável, fixar num SHA de commit do Quartz p/ reprodutibilidade (spec §13)
+  QUARTZ_REF: "v4" # branch/commit do Quartz a fixar
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - name: Checkout site repo (Quartz config)
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Clone Quartz
+        shell: pwsh
+        run: git clone --depth 1 --branch "$env:QUARTZ_REF" https://github.com/jackyzha0/quartz.git quartz-build
+
+      - name: Apply custom config
+        shell: pwsh
+        run: |
+          Copy-Item quartz.config.ts quartz-build/ -Force
+          if (Test-Path quartz.layout.ts) { Copy-Item quartz.layout.ts quartz-build/ -Force }
+
+      - name: Clone vault into content/
+        shell: pwsh
+        env:
+          VAULT_REPO_PAT: ${{ secrets.VAULT_REPO_PAT }}
+        run: |
+          Remove-Item -Recurse -Force quartz-build/content -ErrorAction SilentlyContinue
+          git clone --depth 1 "https://x-access-token:$env:VAULT_REPO_PAT@github.com/$env:VAULT_REPO.git" quartz-build/content
+          Remove-Item -Recurse -Force quartz-build/content/.git
+
+      - name: Install dependencies
+        working-directory: quartz-build
+        shell: pwsh
+        run: npm ci
+
+      - name: Build PUBLIC subset (publish:true only)
+        working-directory: quartz-build
+        shell: pwsh
+        env:
+          QUARTZ_PUBLIC: "true"
+          QUARTZ_BASE_URL: "jandersoncampelo.github.io"
+        run: npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
+
+      - name: Build PRIVATE full vault
+        working-directory: quartz-build
+        shell: pwsh
+        env:
+          QUARTZ_PUBLIC: "false"
+          QUARTZ_BASE_URL: ${{ env.SWA_HOSTNAME }}
+        run: |
+          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-private"
+          Copy-Item "$env:GITHUB_WORKSPACE/staticwebapp.config.json" "$env:GITHUB_WORKSPACE/dist-private/" -Force
+
+      # ---- Deploy público -> GitHub Pages ----
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-public
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
+      # ---- Deploy privado -> Azure Static Web Apps ----
+      - name: Deploy to Azure SWA
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_TOKEN }}
+          action: upload
+          app_location: dist-private
+          output_location: ""
+          skip_app_build: true
