@@ -75,7 +75,7 @@ flowchart LR
 
     subgraph dst["Destinos"]
         PAGES["GitHub Pages<br/>jandersoncampelo.github.io<br/>PÚBLICO"]
-        SWA["Azure Static Web Apps<br/>gate: role 'reader' via Entra<br/>PRIVADO — só eu"]
+        SWA["Azure Static Web Apps<br/>gate: role 'leitor' via GitHub<br/>PRIVADO — só eu"]
     end
 
     VAULT -->|clone read-only<br/>fine-grained PAT| WF
@@ -115,9 +115,11 @@ A separação público/privado é aplicada por **dois controles independentes**,
 
 **Controle 1 — Filtro de publicação (destino público).** O build público usa o filtro `ExplicitPublish` do Quartz, que descarta qualquer nota sem `publish: true` no frontmatter. A política é *default-deny*: o estado padrão de uma nota é não-publicada. Isso é deliberadamente mais seguro que uma seleção por pasta (*default-allow*), onde uma nota privada vaza ao ser movida para o lugar errado.
 
-**Controle 2 — Gate de autorização (destino privado).** O `staticwebapp.config.json` restringe todas as rotas à role custom **`reader`**. O Azure SWA intercepta toda requisição, redireciona para o login do Entra e só libera quem possui essa role. A role é concedida por convite manual a exatamente uma conta (a minha).
+**Controle 2 — Gate de autorização (destino privado).** O `staticwebapp.config.json` restringe todas as rotas à role custom **`leitor`**. O Azure SWA intercepta toda requisição, redireciona para o login (`/.auth/login/github`) e só libera quem possui essa role. A role é concedida por convite manual a exatamente uma conta (a minha).
 
-> ⚠️ **Armadilha crítica:** a role embutida `authenticated` do SWA aceita *qualquer* conta Microsoft/Google válida — não apenas a minha. Usar `authenticated` transformaria "só eu" em "qualquer pessoa com conta Microsoft". O gate **precisa** usar uma role custom (`reader`) com concessão explícita por convite.
+> **Implementação:** o provider adotado foi **GitHub** (e não o Entra originalmente cogitado) e a role foi nomeada **`leitor`**. O princípio de design é idêntico; só mudou o nome do provider e da role. Dois requisitos de consistência: (a) o nome da role no `allowedRoles` precisa bater exatamente com o do convite; (b) o login precisa usar o mesmo provider em que a role foi concedida — logar por outro provider gera sessão sem a role e resulta em 403.
+
+> ⚠️ **Armadilha crítica:** a role embutida `authenticated` do SWA aceita *qualquer* conta válida do provider — não apenas a minha. Usar `authenticated` transformaria "só eu" em "qualquer pessoa com conta GitHub". O gate **precisa** usar uma role custom (`leitor`) com concessão explícita por convite.
 
 **Risco residual — vazamento por wikilink.** O `ExplicitPublish` remove os nós não-publicados do grafo, mas se uma nota **pública** contém um link `[[Nota Privada]]`, o *texto* desse link permanece no HTML público, revelando o nome (não o conteúdo) da nota interna. Mitigação: revisão manual do build público na primeira publicação e sempre que se publicar uma nota nova; uso de `ignorePatterns` para excluir pastas sensíveis inteiras.
 
@@ -145,7 +147,7 @@ A separação público/privado é aplicada por **dois controles independentes**,
 **Settings**
 
 - GitHub Pages → Source: **GitHub Actions**.
-- Azure SWA → Role management → convidar minha conta com a role **`reader`** (após o primeiro deploy).
+- Azure SWA → Role management → convidar minha conta **GitHub** com a role **`leitor`** (após o primeiro deploy).
 
 ## 9. Operação
 
@@ -171,8 +173,8 @@ Decisão: GitHub Pages (público) + Azure SWA (privado). Motivo: Pages de usuár
 **AD-3 — Publicação opt-in por frontmatter (vs. seleção por pasta).**
 Decisão: `publish: true` via `ExplicitPublish`. Motivo: *default-deny*. Numa base que mistura conteúdo pessoal e de trabalho, o padrão precisa ser "não publica", com a exposição sendo um ato explícito.
 
-**AD-4 — Role custom `reader` (vs. role embutida `authenticated`).**
-Decisão: role custom com convite explícito. Motivo: `authenticated` admite qualquer conta federada; só uma role custom concedida por convite realiza o requisito de usuário único.
+**AD-4 — Role custom `leitor` (vs. role embutida `authenticated`).**
+Decisão: role custom com convite explícito. Motivo: `authenticated` admite qualquer conta federada; só uma role custom concedida por convite realiza o requisito de usuário único. (Implementada como `leitor` via provider GitHub; o nome original cogitado era `reader` via Entra.)
 
 **AD-5 — Repo de configuração sem conteúdo (vs. vault commitado no site).**
 Decisão: conteúdo clonado em build time, nunca versionado no repo de config. Motivo: permite que o repo de configuração seja público sem vazar nada, e mantém uma única fonte de verdade (o vault).

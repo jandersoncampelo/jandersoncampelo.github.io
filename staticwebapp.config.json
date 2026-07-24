@@ -1,9 +1,9 @@
 {
   "routes": [
-    { "route": "/*", "allowedRoles": ["reader"] }
+    { "route": "/*", "allowedRoles": ["leitor"] }
   ],
   "responseOverrides": {
-    "401": { "statusCode": 302, "redirect": "/.auth/login/aad" }
+    "401": { "statusCode": 302, "redirect": "/.auth/login/github" }
   },
   "navigationFallback": {
     "rewrite": "/404.html"

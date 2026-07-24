@@ -60,11 +60,13 @@ Settings → Pages → **Source: GitHub Actions**. (Não precisa de secret — u
 
 Só precisa fazer **depois do primeiro deploy** (o `staticwebapp.config.json` bloqueia até você aceitar o convite):
 
-Portal → seu Static Web App → **Role management** → **Invite**
-- Provider: **Microsoft**
-- Email: o seu
-- Role: **`reader`** (⚠️ não use `authenticated` — deixaria entrar qualquer conta Microsoft)
-- Gere o link, abra logado na sua conta e aceite.
+Portal → seu Static Web App → **Role management** → **Invite** (ou via `az staticwebapp users invite`)
+- Provider: **GitHub**
+- Username: o seu (ex.: `jandersoncampelo`)
+- Role: **`leitor`** (⚠️ não use `authenticated` — deixaria entrar qualquer conta GitHub)
+- Gere o link, abra logado na sua conta GitHub e aceite. Depois faça logout/login (`/.auth/logout` → `/.auth/login/github`) para a sessão pegar a role.
+
+> A role concedida (`leitor`) precisa bater **exatamente** com a `allowedRoles` do `staticwebapp.config.json`, e o login precisa ser pelo mesmo provider em que a role foi concedida (GitHub).
 
 ### 6. Rodar
 
