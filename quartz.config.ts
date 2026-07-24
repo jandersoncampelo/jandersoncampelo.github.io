@@ -23,7 +23,7 @@ const config: QuartzConfig = {
     analytics: null, // troque para { provider: "plausible" } etc. se quiser
     locale: "pt-BR",
     baseUrl,
-    ignorePatterns: ["private", "templates", ".obsidian", ".trash"],
+    ignorePatterns: ["private", "templates", ".obsidian", ".trash", "raw"],
     defaultDateType: "modified",
     theme: {
       fontOrigin: "googleFonts",
