@@ -40,7 +40,15 @@ jobs:
 
       - name: Clone Quartz
         shell: pwsh
-        run: git clone --depth 1 --branch "$env:QUARTZ_REF" https://github.com/jackyzha0/quartz.git quartz-build
+        run: |
+          # QUARTZ_REF pode ser branch, tag ou SHA de commit. --branch nao aceita SHA,
+          # entao fazemos init + fetch --depth 1 do ref (GitHub permite fetch por SHA).
+          git init quartz-build
+          git -C quartz-build remote add origin https://github.com/jackyzha0/quartz.git
+          git -C quartz-build fetch --depth 1 origin "$env:QUARTZ_REF"
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao buscar o ref '$env:QUARTZ_REF' do Quartz" }
+          git -C quartz-build checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao fazer checkout do ref '$env:QUARTZ_REF' do Quartz" }
 
       - name: Apply custom config
         shell: pwsh
