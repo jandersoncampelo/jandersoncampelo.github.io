@@ -19,7 +19,7 @@ concurrency:
 env:
   VAULT_REPO: "jandersoncampelo/the-vault" # owner/repo do vault (privado)
   # >>> AJUSTAR APÓS PROVISIONAR O SWA (B2 do runbook) <<<
-  SWA_HOSTNAME: "SEU_HOST.azurestaticapps.net" # de: az staticwebapp show ... --query defaultHostname
+  SWA_HOSTNAME: "gentle-island-020ee690f.7.azurestaticapps.net" # de: az staticwebapp show ... --query defaultHostname
   # Após validar um build estável, fixar num SHA de commit do Quartz p/ reprodutibilidade (spec §13)
   QUARTZ_REF: "v4" # branch/commit do Quartz a fixar
 
