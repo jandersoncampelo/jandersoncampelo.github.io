@@ -56,6 +56,19 @@ jobs:
           Copy-Item quartz.config.ts quartz-build/ -Force
           if (Test-Path quartz.layout.ts) { Copy-Item quartz.layout.ts quartz-build/ -Force }
 
+      - name: Apply theme (vendored quartz-themes/slytherin)
+        shell: pwsh
+        run: |
+          # Tema vendorizado (congelado no git) -> injeta no clone do Quartz,
+          # replicando o que o action.sh do quartz-themes faria, mas sem curl|bash.
+          $stylesDir = "quartz-build/quartz/styles"
+          New-Item -ItemType Directory -Force "$stylesDir/themes" | Out-Null
+          Copy-Item themes/slytherin/_index.scss "$stylesDir/themes/_index.scss" -Force
+          # custom.scss e conhecido (Quartz fixado no SHA); reescreve deterministicamente
+          # garantindo a ordem correta dos @use.
+          Set-Content "$stylesDir/custom.scss" '@use "./base.scss";'
+          Add-Content "$stylesDir/custom.scss" '@use "./themes";'
+
       - name: Clone vault into content/
         shell: pwsh
         env:
