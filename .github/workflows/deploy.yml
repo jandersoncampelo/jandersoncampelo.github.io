@@ -20,8 +20,8 @@ env:
   VAULT_REPO: "jandersoncampelo/the-vault" # owner/repo do vault (privado)
   # >>> AJUSTAR APÓS PROVISIONAR O SWA (B2 do runbook) <<<
   SWA_HOSTNAME: "gentle-island-020ee690f.7.azurestaticapps.net" # de: az staticwebapp show ... --query defaultHostname
-  # Após validar um build estável, fixar num SHA de commit do Quartz p/ reprodutibilidade (spec §13)
-  QUARTZ_REF: "v4" # branch/commit do Quartz a fixar
+  # Fixado no HEAD do v4 em 2026-07-24 p/ reprodutibilidade (spec §13). Atualizar deliberadamente.
+  QUARTZ_REF: "d25a6eabf96751ffca56f8a8139272def7a65041" # branch/commit do Quartz a fixar
 
 jobs:
   build-and-deploy:
@@ -36,7 +36,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20.x"
+          node-version: "22.x" # Quartz 4.5.2+ exige Node >=22 / npm >=10.9.2
 
       - name: Clone Quartz
         shell: pwsh
@@ -55,6 +55,7 @@ jobs:
         run: |
           Remove-Item -Recurse -Force quartz-build/content -ErrorAction SilentlyContinue
           git clone --depth 1 "https://x-access-token:$env:VAULT_REPO_PAT@github.com/$env:VAULT_REPO.git" quartz-build/content
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao clonar o vault ($env:VAULT_REPO) - verifique o secret VAULT_REPO_PAT (acesso Contents:Read ao repo)" }
           Remove-Item -Recurse -Force quartz-build/content/.git
 
       - name: Install dependencies
