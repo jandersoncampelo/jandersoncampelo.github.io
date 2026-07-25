@@ -2,13 +2,24 @@
 
 | | |
 | --- | --- |
-| **Status** | Proposed |
+| **Status** | ⚠️ Parcialmente superseded (ver banner abaixo) |
 | **Autor** | Janderson Campelo |
 | **Data** | 2026-07-24 |
 | **Repo de configuração** | `jandersoncampelo.github.io` |
-| **Repo de conteúdo** | vault Obsidian (privado, separado) |
+| **Repo de conteúdo** | `jandersoncampelo/the-vault` (Obsidian, privado, separado) |
 
 ---
+
+> ## ⚠️ Atualização — o que mudou desde o design original
+>
+> Este spec descreve uma arquitetura de **dois destinos** (público no GitHub Pages + vault completo privado no Azure SWA). A implementação **divergiu** e o **destino privado foi abandonado**:
+>
+> - **Só há um destino: GitHub Pages (público, opt-in `publish: true`).** O SWA foi removido.
+> - **Motivo:** o build completo do vault no Quartz v5 deu **728 MB**, acima do limite **hard de 250 MB** do Azure SWA Free; o objetivo de "acesso privado ao vault inteiro" (RF1/objetivo 1) foi **dropado**.
+> - **Gerador atualizado para Quartz v5** (config em YAML `quartz.config.yaml`, plugins como pacotes npm). O `quartz.config.ts`, o `staticwebapp.config.json` e o `quartz.config.public.yaml` foram removidos.
+> - **Vazamento descoberto e corrigido:** o Quartz copia arquivos não-`.md` como assets sem passar pelo filtro `publish` (era um vazamento ativo). Mitigado por `ignorePatterns` + `canvas-page`/`bases-page` desligados.
+>
+> **O que continua válido abaixo:** o princípio de **publicação opt-in default-deny** (§7 Controle 1), o **repo de config sem conteúdo** (AD-5), o **Quartz como gerador** (AD-6, agora v5), e o **risco residual de vazamento por wikilink** (§7). **O que NÃO vale mais:** tudo sobre o destino privado/SWA/Entra/role (§4 build privado, §7 Controle 2, AD-1, AD-2, AD-4, os critérios de aceitação do SWA). Para o estado atual, ver `CLAUDE.md` e `README.md`.
 
 ## 1. Contexto e problema
 
