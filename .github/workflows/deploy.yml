@@ -88,6 +88,10 @@ jobs:
           $rd = Gate $cfg '@quartz-community/remove-draft'
           if (-not ($ep -eq $true -and $rd -eq $false)) { throw "GATE INVALIDO: explicit-publish=$ep remove-draft=$rd (esperado true/false) - abortando para nao vazar o vault" }
           Write-Host "Gate publico OK: explicit-publish=true, remove-draft=false"
+          # CSS custom: append no ponto de injecao do Quartz (quartz/styles/custom.scss)
+          if (Test-Path "$env:GITHUB_WORKSPACE/custom.scss") {
+            Get-Content "$env:GITHUB_WORKSPACE/custom.scss" | Add-Content "quartz/styles/custom.scss"
+          }
           npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
 
       # ---- Deploy público -> GitHub Pages ----

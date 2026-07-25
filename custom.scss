@@ -1,0 +1,15 @@
+// CSS custom do site. O deploy.yml faz APPEND deste arquivo em
+// quartz-build/quartz/styles/custom.scss (o ponto de injeção do Quartz) antes do build.
+
+// Tags menores: nas listagens (folder/tag pages) e sob os títulos das notas, as
+// pills herdavam 16px (o tamanho do corpo) e ficavam grandes demais. Reduz para
+// um tamanho de "pill" discreto.
+a.tag-link {
+  font-size: 0.72rem;
+  padding: 0.12rem 0.45rem;
+  line-height: 1.4;
+}
+
+ul.tags {
+  gap: 0.25rem;
+}
