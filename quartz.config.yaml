@@ -26,8 +26,9 @@ configuration:
     - "**/*.py"
     - "**/*.pyc"
     - "**/__pycache__/**"
-    - "**/*.base"
-    - "**/*.canvas"
+    # NOTA: .base/.canvas foram REMOVIDOS daqui deliberadamente para publicar o
+    # wiki/dashboard.base. Isso expoe o indice do vault e ignora o publish:true;
+    # qualquer .base/.canvas novo tambem publica automaticamente.
     - "**/*.json"
     - "**/*.toml"
     - "**/*.sh"
@@ -132,9 +133,10 @@ plugins:
     enabled: true
   - source: "@quartz-community/cname"
     enabled: true
-  # canvas-page DESLIGADO: emite .canvas por fora do filtro explicit-publish (VAZAMENTO no publico).
+  # canvas-page LIGADO por escolha do usuario (0 arquivos .canvas hoje; inofensivo).
+  # ATENCAO: emite .canvas por fora do filtro publish -> novos .canvas publicam sozinhos.
   - source: "@quartz-community/canvas-page"
-    enabled: false
+    enabled: true
   - source: "@quartz-community/content-page"
     enabled: true
   - source: "@quartz-community/folder-page"
@@ -223,9 +225,10 @@ plugins:
       position: left
       priority: 25
       display: mobile-only
-  # bases-page DESLIGADO: emite .base por fora do filtro explicit-publish (VAZAMENTO no publico).
+  # bases-page LIGADO por escolha do usuario para publicar wiki/dashboard.base.
+  # ATENCAO: renderiza a query IGNORANDO publish:true -> expoe o indice do vault.
   - source: "@quartz-community/bases-page"
-    enabled: false
+    enabled: true
     options: {}
     order: 50
   # note-properties = PARSER de frontmatter do v5 (nao so a tabela visual). Precisa
