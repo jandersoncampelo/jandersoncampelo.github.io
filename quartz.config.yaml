@@ -106,11 +106,11 @@ plugins:
     options:
       renderEngine: katex
     order: 80
-  # ---- Tema Slytherin (nativo do v5; @quartz-themes/core já vem instalado) ----
+  # ---- Tema sanctum.yellow (@quartz-themes/core + pacote @quartz-themes/sanctum) ----
   - source: "@quartz-themes/core"
     enabled: true
     options:
-      theme: slytherin
+      theme: sanctum.yellow
       mode: both
   # ---- Gate de publicação (PÚBLICO — único controle anti-vazamento, spec §7) ----
   - source: "@quartz-community/remove-draft"
@@ -179,7 +179,7 @@ plugins:
       position: beforeBody
       priority: 20
   - source: "@quartz-community/tag-list"
-    enabled: true
+    enabled: false
     layout:
       position: beforeBody
       priority: 30
@@ -229,12 +229,10 @@ plugins:
     options: {}
     order: 50
   # note-properties = PARSER de frontmatter do v5 (nao so a tabela visual). Precisa
-  # estar LIGADO senao nenhum title/publish e lido (gate quebra, tudo vira "Sem titulo").
-  # hidePropertiesView:true parseia o frontmatter mas nao renderiza a tabela.
+  # estar LIGADO (default) senao nenhum title/publish e lido (gate quebra, tudo
+  # vira "Sem titulo"). Opcoes no padrao (mostra o painel de propriedades).
   - source: "@quartz-community/note-properties"
     enabled: true
-    options:
-      hidePropertiesView: true
     order: 5
     layout:
       position: beforeBody
