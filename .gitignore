@@ -10,3 +10,8 @@ quartz-build/
 # Node
 node_modules/
 .DS_Store
+
+# builds de teste local (v5)
+dist-test-public/
+dist-test-private/
+dist-sizetest/
