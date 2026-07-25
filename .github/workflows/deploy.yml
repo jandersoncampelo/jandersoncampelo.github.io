@@ -18,10 +18,8 @@ concurrency:
 
 env:
   VAULT_REPO: "jandersoncampelo/the-vault" # owner/repo do vault (privado)
-  # >>> AJUSTAR APÓS PROVISIONAR O SWA (B2 do runbook) <<<
-  SWA_HOSTNAME: "gentle-island-020ee690f.7.azurestaticapps.net" # de: az staticwebapp show ... --query defaultHostname
-  # Fixado no HEAD do v4 em 2026-07-24 p/ reprodutibilidade (spec §13). Atualizar deliberadamente.
-  QUARTZ_REF: "d25a6eabf96751ffca56f8a8139272def7a65041" # branch/commit do Quartz a fixar
+  # Quartz 5.0.0 (commit da tag). baseUrl de cada destino vive no proprio YAML.
+  QUARTZ_REF: "ab346fa66a895e12d63a308e70ce330ba795822a" # branch/commit do Quartz a fixar
 
 jobs:
   build-and-deploy:
@@ -50,25 +48,6 @@ jobs:
           git -C quartz-build checkout --detach FETCH_HEAD
           if ($LASTEXITCODE -ne 0) { throw "Falha ao fazer checkout do ref '$env:QUARTZ_REF' do Quartz" }
 
-      - name: Apply custom config
-        shell: pwsh
-        run: |
-          Copy-Item quartz.config.ts quartz-build/ -Force
-          if (Test-Path quartz.layout.ts) { Copy-Item quartz.layout.ts quartz-build/ -Force }
-
-      - name: Apply theme (vendored quartz-themes/slytherin)
-        shell: pwsh
-        run: |
-          # Tema vendorizado (congelado no git) -> injeta no clone do Quartz,
-          # replicando o que o action.sh do quartz-themes faria, mas sem curl|bash.
-          $stylesDir = "quartz-build/quartz/styles"
-          New-Item -ItemType Directory -Force "$stylesDir/themes" | Out-Null
-          Copy-Item themes/slytherin/_index.scss "$stylesDir/themes/_index.scss" -Force
-          # custom.scss e conhecido (Quartz fixado no SHA); reescreve deterministicamente
-          # garantindo a ordem correta dos @use.
-          Set-Content "$stylesDir/custom.scss" '@use "./base.scss";'
-          Add-Content "$stylesDir/custom.scss" '@use "./themes";'
-
       - name: Clone vault into content/
         shell: pwsh
         env:
@@ -84,21 +63,34 @@ jobs:
         shell: pwsh
         run: npm ci
 
+      # ---- Build PUBLICO -> GitHub Pages (so notas publish:true) ----
+      # v5: o config vive em quartz.config.yaml no cwd. Copiamos o YAML publico e,
+      # ANTES de buildar, um guard aborta se o gate nao for o esperado (spec §7).
       - name: Build PUBLIC subset (publish:true only)
         working-directory: quartz-build
         shell: pwsh
-        env:
-          QUARTZ_PUBLIC: "true"
-          QUARTZ_BASE_URL: "jandersoncampelo.github.io"
-        run: npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
+        run: |
+          Copy-Item "$env:GITHUB_WORKSPACE/quartz.config.public.yaml" "quartz.config.yaml" -Force
+          $cfg = Get-Content "quartz.config.yaml"
+          function Gate($lines, $src) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -like "*$src*") { return ($lines[$i + 1] -match "enabled:\s*true") } } return $null }
+          $ep = Gate $cfg '@quartz-community/explicit-publish'
+          $rd = Gate $cfg '@quartz-community/remove-draft'
+          if (-not ($ep -eq $true -and $rd -eq $false)) { throw "GATE PUBLICO INVALIDO: explicit-publish=$ep remove-draft=$rd (esperado true/false)" }
+          Write-Host "Gate publico OK: explicit-publish=true, remove-draft=false"
+          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
 
+      # ---- Build PRIVADO -> Azure SWA (vault completo, menos draft:true) ----
       - name: Build PRIVATE full vault
         working-directory: quartz-build
         shell: pwsh
-        env:
-          QUARTZ_PUBLIC: "false"
-          QUARTZ_BASE_URL: ${{ env.SWA_HOSTNAME }}
         run: |
+          Copy-Item "$env:GITHUB_WORKSPACE/quartz.config.yaml" "quartz.config.yaml" -Force
+          $cfg = Get-Content "quartz.config.yaml"
+          function Gate($lines, $src) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -like "*$src*") { return ($lines[$i + 1] -match "enabled:\s*true") } } return $null }
+          $rd = Gate $cfg '@quartz-community/remove-draft'
+          $ep = Gate $cfg '@quartz-community/explicit-publish'
+          if (-not ($rd -eq $true -and $ep -eq $false)) { throw "GATE PRIVADO INVALIDO: remove-draft=$rd explicit-publish=$ep (esperado true/false)" }
+          Write-Host "Gate privado OK: remove-draft=true, explicit-publish=false"
           npx quartz build --output "$env:GITHUB_WORKSPACE/dist-private"
           Copy-Item "$env:GITHUB_WORKSPACE/staticwebapp.config.json" "$env:GITHUB_WORKSPACE/dist-private/" -Force
 
