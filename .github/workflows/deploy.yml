@@ -18,8 +18,9 @@ concurrency:
 
 env:
   VAULT_REPO: "jandersoncampelo/the-vault" # owner/repo do vault (privado)
-  # Quartz 5.0.0 (commit da tag). baseUrl de cada destino vive no proprio YAML.
-  QUARTZ_REF: "ab346fa66a895e12d63a308e70ce330ba795822a" # branch/commit do Quartz a fixar
+  # Quartz 5, branch v5 HEAD (2026-07-24). A tag v5.0.0 tem bug no install-plugins
+  # (crash no scss); este commit ja tem o fallback. baseUrl vive em cada YAML.
+  QUARTZ_REF: "2a5e3ae57452fefea3ee6cb0a49b558855cfb181" # branch/commit do Quartz a fixar
 
 jobs:
   build-and-deploy:
@@ -58,10 +59,19 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Falha ao clonar o vault ($env:VAULT_REPO) - verifique o secret VAULT_REPO_PAT (acesso Contents:Read ao repo)" }
           Remove-Item -Recurse -Force quartz-build/content/.git
 
-      - name: Install dependencies
+      - name: Install dependencies + tema + indice de plugins (v5)
         working-directory: quartz-build
         shell: pwsh
-        run: npm ci
+        run: |
+          npm ci
+          # Cada tema do quartz-themes e um pacote npm separado (core so e o motor).
+          npm install @quartz-themes/slytherin
+          if ($LASTEXITCODE -ne 0) { throw "Falha ao instalar @quartz-themes/slytherin" }
+          # v5 gera .quartz/plugins (barrel importado por Head.tsx) a partir do config.
+          # npx quartz build NAO dispara o prebuild, entao rodamos install-plugins na mao.
+          Copy-Item "$env:GITHUB_WORKSPACE/quartz.config.yaml" "quartz.config.yaml" -Force
+          npm run install-plugins
+          if (-not (Test-Path ".quartz/plugins/index.ts")) { throw "install-plugins nao gerou .quartz/plugins/index.ts" }
 
       # ---- Build PUBLICO -> GitHub Pages (so notas publish:true) ----
       # v5: o config vive em quartz.config.yaml no cwd. Copiamos o YAML publico e,

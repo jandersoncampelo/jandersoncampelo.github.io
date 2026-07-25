@@ -12,12 +12,26 @@ configuration:
   analytics: null
   locale: pt-BR
   baseUrl: gentle-island-020ee690f.7.azurestaticapps.net
+  # SEGURANCA: o Quartz copia arquivos nao-.md como assets SEM filtro de publish.
+  # Denylist de pastas de tooling + extensoes de codigo/dados para nao vazar no publico.
+  # (imagens/pdf continuam permitidos, pois sao linkados pelas notas)
   ignorePatterns:
     - private
     - templates
     - .obsidian
     - .trash
     - raw
+    - tools
+    - scratch
+    - "**/*.py"
+    - "**/*.pyc"
+    - "**/__pycache__/**"
+    - "**/*.base"
+    - "**/*.canvas"
+    - "**/*.json"
+    - "**/*.toml"
+    - "**/*.sh"
+    - "**/*.ipynb"
   theme:
     fontOrigin: googleFonts
     cdnCaching: true
@@ -118,21 +132,26 @@ plugins:
     enabled: false
   - source: "@quartz-community/cname"
     enabled: true
+  # canvas-page DESLIGADO: emite .canvas por fora do filtro explicit-publish (VAZAMENTO no publico).
   - source: "@quartz-community/canvas-page"
-    enabled: true
+    enabled: false
   - source: "@quartz-community/content-page"
     enabled: true
   - source: "@quartz-community/folder-page"
     enabled: true
+  # tag-page DESLIGADO: gera 1 pagina por tag (~429MB no vault atual) -> estoura o
+  # limite de 250MB do SWA Free. As tags ainda aparecem nas notas (tag-list).
   - source: "@quartz-community/tag-page"
-    enabled: true
+    enabled: false
   - source: "@quartz-community/explorer"
     enabled: true
     layout:
       position: left
       priority: 50
+  # graph DESLIGADO: o v5 inlina ~163KB de dados de grafo em CADA pagina (~124MB no
+  # total) -> junto com tag-page estourava os 250MB do SWA Free. Pouco util em 2291 nos.
   - source: "@quartz-community/graph"
-    enabled: true
+    enabled: false
     layout:
       position: right
       priority: 10
@@ -204,14 +223,18 @@ plugins:
       position: left
       priority: 25
       display: mobile-only
+  # bases-page DESLIGADO: emite .base por fora do filtro explicit-publish (VAZAMENTO no publico).
   - source: "@quartz-community/bases-page"
-    enabled: true
+    enabled: false
     options: {}
     order: 50
-  # note-properties DESLIGADO: renderiza tabela de frontmatter em cada nota (ruido
-  # nas notas importadas). Nao existia no v4.
+  # note-properties = PARSER de frontmatter do v5 (nao so a tabela visual). Precisa
+  # estar LIGADO senao nenhum title/publish e lido (gate quebra, tudo vira "Sem titulo").
+  # hidePropertiesView:true parseia o frontmatter mas nao renderiza a tabela.
   - source: "@quartz-community/note-properties"
-    enabled: false
+    enabled: true
+    options:
+      hidePropertiesView: true
     order: 5
     layout:
       position: beforeBody
