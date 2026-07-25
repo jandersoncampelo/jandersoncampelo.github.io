@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=./quartz/plugins/quartz-plugins.schema.json
 #
-# Config CANÔNICO = build PRIVADO (vault completo, atrás do Entra/GitHub no SWA).
-# Gate privado: remove-draft LIGADO, explicit-publish DESLIGADO (mostra tudo menos draft:true).
-# O build PÚBLICO usa quartz.config.public.yaml (gerado deste, só invertendo esses dois flags).
-# baseUrl é sobrescrito por --base-url no pipeline (difere entre os dois destinos).
+# Config ÚNICO do site (só GitHub Pages, público). O destino privado (SWA) foi
+# abandonado. Gate PÚBLICO: explicit-publish LIGADO, remove-draft DESLIGADO ->
+# só notas com `publish: true` sobem. É o único controle que mantém as notas
+# privadas fora da web pública — NÃO enfraquecer (spec §7).
 configuration:
   pageTitle: Janderson Campelo
   pageTitleSuffix: ""
@@ -11,7 +11,7 @@ configuration:
   enablePopovers: true
   analytics: null
   locale: pt-BR
-  baseUrl: gentle-island-020ee690f.7.azurestaticapps.net
+  baseUrl: jandersoncampelo.github.io
   # SEGURANCA: o Quartz copia arquivos nao-.md como assets SEM filtro de publish.
   # Denylist de pastas de tooling + extensoes de codigo/dados para nao vazar no publico.
   # (imagens/pdf continuam permitidos, pois sao linkados pelas notas)
@@ -112,11 +112,11 @@ plugins:
     options:
       theme: slytherin
       mode: both
-  # ---- Gate de publicação (destino PRIVADO) ----
+  # ---- Gate de publicação (PÚBLICO — único controle anti-vazamento, spec §7) ----
   - source: "@quartz-community/remove-draft"
-    enabled: true
-  - source: "@quartz-community/explicit-publish"
     enabled: false
+  - source: "@quartz-community/explicit-publish"
+    enabled: true
   - source: "@quartz-community/alias-redirects"
     enabled: true
   - source: "@quartz-community/content-index"
@@ -126,10 +126,10 @@ plugins:
       enableRSS: true
   - source: "@quartz-community/favicon"
     enabled: true
-  # og-image DESLIGADO: gera 1 PNG por pagina (~3400) -> estoura tempo de build e o
-  # limite de 250MB do SWA Free. Reativar so se migrar de plano.
+  # og-image LIGADO: sem o SWA, o site publico e pequeno (so publish:true), entao
+  # gerar 1 PNG por pagina publicada e barato.
   - source: "@quartz-community/og-image"
-    enabled: false
+    enabled: true
   - source: "@quartz-community/cname"
     enabled: true
   # canvas-page DESLIGADO: emite .canvas por fora do filtro explicit-publish (VAZAMENTO no publico).
@@ -139,19 +139,19 @@ plugins:
     enabled: true
   - source: "@quartz-community/folder-page"
     enabled: true
-  # tag-page DESLIGADO: gera 1 pagina por tag (~429MB no vault atual) -> estoura o
-  # limite de 250MB do SWA Free. As tags ainda aparecem nas notas (tag-list).
+  # tag-page LIGADO de volta: sem o SWA, o site publico so tem notas publish:true,
+  # entao poucas tag-pages (era 429MB no vault COMPLETO, nao no subset publico).
   - source: "@quartz-community/tag-page"
-    enabled: false
+    enabled: true
   - source: "@quartz-community/explorer"
     enabled: true
     layout:
       position: left
       priority: 50
-  # graph DESLIGADO: o v5 inlina ~163KB de dados de grafo em CADA pagina (~124MB no
-  # total) -> junto com tag-page estourava os 250MB do SWA Free. Pouco util em 2291 nos.
+  # graph LIGADO de volta: sem o SWA, o site publico e pequeno, entao o peso do grafo
+  # por pagina (~163KB) nao e problema (poucas paginas publicadas).
   - source: "@quartz-community/graph"
-    enabled: false
+    enabled: true
     layout:
       position: right
       priority: 10

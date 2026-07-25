@@ -1,4 +1,4 @@
-name: Deploy vault (public + private)
+name: Deploy site (GitHub Pages)
 
 on:
   workflow_dispatch: {} # botão de deploy manual na aba Actions
@@ -73,36 +73,22 @@ jobs:
           npm run install-plugins
           if (-not (Test-Path ".quartz/plugins/index.ts")) { throw "install-plugins nao gerou .quartz/plugins/index.ts" }
 
-      # ---- Build PUBLICO -> GitHub Pages (so notas publish:true) ----
-      # v5: o config vive em quartz.config.yaml no cwd. Copiamos o YAML publico e,
-      # ANTES de buildar, um guard aborta se o gate nao for o esperado (spec §7).
-      - name: Build PUBLIC subset (publish:true only)
-        working-directory: quartz-build
-        shell: pwsh
-        run: |
-          Copy-Item "$env:GITHUB_WORKSPACE/quartz.config.public.yaml" "quartz.config.yaml" -Force
-          $cfg = Get-Content "quartz.config.yaml"
-          function Gate($lines, $src) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -like "*$src*") { return ($lines[$i + 1] -match "enabled:\s*true") } } return $null }
-          $ep = Gate $cfg '@quartz-community/explicit-publish'
-          $rd = Gate $cfg '@quartz-community/remove-draft'
-          if (-not ($ep -eq $true -and $rd -eq $false)) { throw "GATE PUBLICO INVALIDO: explicit-publish=$ep remove-draft=$rd (esperado true/false)" }
-          Write-Host "Gate publico OK: explicit-publish=true, remove-draft=false"
-          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
-
-      # ---- Build PRIVADO -> Azure SWA (vault completo, menos draft:true) ----
-      - name: Build PRIVATE full vault
+      # ---- Build (publico) -> GitHub Pages (so notas publish:true) ----
+      # Guard de seguranca: aborta se o gate NAO for publico (explicit-publish on,
+      # remove-draft off). E o unico controle que mantem o vault privado fora da web
+      # (spec §7) — se ele quebrar, abortamos em vez de vazar tudo.
+      - name: Build site (publish:true only)
         working-directory: quartz-build
         shell: pwsh
         run: |
           Copy-Item "$env:GITHUB_WORKSPACE/quartz.config.yaml" "quartz.config.yaml" -Force
           $cfg = Get-Content "quartz.config.yaml"
           function Gate($lines, $src) { for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -like "*$src*") { return ($lines[$i + 1] -match "enabled:\s*true") } } return $null }
-          $rd = Gate $cfg '@quartz-community/remove-draft'
           $ep = Gate $cfg '@quartz-community/explicit-publish'
-          if (-not ($rd -eq $true -and $ep -eq $false)) { throw "GATE PRIVADO INVALIDO: remove-draft=$rd explicit-publish=$ep (esperado true/false)" }
-          Write-Host "Gate privado OK: remove-draft=true, explicit-publish=false"
-          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-private"
-          Copy-Item "$env:GITHUB_WORKSPACE/staticwebapp.config.json" "$env:GITHUB_WORKSPACE/dist-private/" -Force
+          $rd = Gate $cfg '@quartz-community/remove-draft'
+          if (-not ($ep -eq $true -and $rd -eq $false)) { throw "GATE INVALIDO: explicit-publish=$ep remove-draft=$rd (esperado true/false) - abortando para nao vazar o vault" }
+          Write-Host "Gate publico OK: explicit-publish=true, remove-draft=false"
+          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
 
       # ---- Deploy público -> GitHub Pages ----
       - name: Setup Pages
@@ -114,13 +100,3 @@ jobs:
           path: dist-public
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
-
-      # ---- Deploy privado -> Azure Static Web Apps ----
-      - name: Deploy to Azure SWA
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_SWA_TOKEN }}
-          action: upload
-          app_location: dist-private
-          output_location: ""
-          skip_app_build: true
