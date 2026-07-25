@@ -61,7 +61,7 @@ Remove-Item -Recurse -Force quartz-build/content
 New-Item -ItemType Junction -Path quartz-build/content -Target "C:\caminho\para\the-vault"
 cd quartz-build
 npm ci
-npm install @quartz-themes/slytherin   # temas sao pacotes npm separados
+npm install @quartz-themes/sanctum   # temas sao pacotes npm separados (flavor: theme: sanctum.yellow)
 npm run install-plugins                 # gera .quartz/plugins (npx quartz build nao dispara o prebuild)
 npx quartz build --serve
 ```

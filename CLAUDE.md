@@ -23,7 +23,7 @@ The repo migrated from Quartz v4 (TypeScript config) to **v5 (YAML config, npm-p
 
 - **Config is `quartz.config.yaml`** (YAML), not `quartz.config.ts`. Plugins are `@quartz-community/*` npm packages declared with `enabled`/`options`/`order`/`layout`. Layout is declarative in the YAML.
 - **`note-properties` IS the frontmatter parser** (not just a properties table). Disabling it breaks ALL titles ("Sem título") and the `publish` gate. Keep `enabled: true` with `hidePropertiesView: true`.
-- **Themes are separate npm packages** (`@quartz-themes/slytherin`); `@quartz-themes/core` is only the engine. The pipeline runs `npm install @quartz-themes/slytherin`. Current theme: **slytherin** (green).
+- **Themes are separate npm packages** (`@quartz-themes/sanctum`); `@quartz-themes/core` is only the engine. The pipeline runs `npm install @quartz-themes/sanctum`. Current theme: **sanctum.yellow** (dark, yellow accent). Flavored themes (e.g. `sanctum.yellow`) install the base package (`@quartz-themes/sanctum`) and set the flavored name as the `theme:` option value.
 - **`QUARTZ_REF` is pinned to the v5 branch HEAD, not the `v5.0.0` tag** — the tag has a bug (`install-plugins` crashes on `.scss` loading the config under tsx; the branch has the fallback fix).
 - **`npx quartz build` does NOT run the prebuild** → the pipeline runs `npm run install-plugins` manually to generate `.quartz/plugins/index.ts` (a barrel imported by `Head.tsx`).
 
@@ -40,11 +40,11 @@ Residual known risk: a public note linking `[[Private Note]]` leaks the *title* 
 
 ## Build note
 
-`npx quartz build` does **not** run against this repo directly. The pipeline clones Quartz at the pinned commit into `quartz-build/`, copies `quartz.config.yaml` over it, clones the vault into `quartz-build/content/`, runs `npm ci` + `npm install @quartz-themes/slytherin` + `npm run install-plugins`, then a single `npx quartz build` → `dist-public/` → GitHub Pages. There is no `package.json` in this repo — it comes from Quartz.
+`npx quartz build` does **not** run against this repo directly. The pipeline clones Quartz at the pinned commit into `quartz-build/`, copies `quartz.config.yaml` over it, clones the vault into `quartz-build/content/`, runs `npm ci` + `npm install @quartz-themes/sanctum` + `npm run install-plugins`, then a single `npx quartz build` → `dist-public/` → GitHub Pages. There is no `package.json` in this repo — it comes from Quartz.
 
 ## Local preview
 
-See `README.md` "Desenvolvimento local" for the exact v5 PowerShell steps: clone Quartz at the pinned commit, copy `quartz.config.yaml`, junction `quartz-build/content` to a local vault, `npm ci`, `npm install @quartz-themes/slytherin`, `npm run install-plugins`, then `npx quartz build --serve`. Node **≥ 22** required.
+See `README.md` "Desenvolvimento local" for the exact v5 PowerShell steps: clone Quartz at the pinned commit, copy `quartz.config.yaml`, junction `quartz-build/content` to a local vault, `npm ci`, `npm install @quartz-themes/sanctum`, `npm run install-plugins`, then `npx quartz build --serve`. Node **≥ 22** required.
 
 ## Sizing / hosting
 
