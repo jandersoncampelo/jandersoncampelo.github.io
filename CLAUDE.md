@@ -17,6 +17,15 @@ Content comes from a **separate private vault repo** (`jandersoncampelo/the-vaul
 
 The site builds **once** and deploys to **GitHub Pages** (public). Only notes with `publish: true` in frontmatter are published — **default-deny**. There is **no private/authenticated destination** (an Azure SWA "full vault" destination existed in an earlier design but was abandoned — see History at the bottom).
 
+### Landing page + subpath layout
+
+The published site has two parts under one deploy:
+
+- **`/` (root)** — a static profile/landing page. Its source is **`index.html` in THIS repo** (site chrome, not vault content). `deploy.yml` copies it to `dist-public/index.html`.
+- **`/vault/`** — the Quartz digital garden. `baseUrl` is `jandersoncampelo.github.io/vault` and the pipeline builds Quartz into `dist-public/vault/`.
+
+Consequences to keep in mind: Quartz's canonical URLs, sitemap, RSS, og-image and 404 all live under `/vault/`; a top-level (non-`/vault/`) 404 does **not** use Quartz's 404 page. The garden's homepage (vault `index.md`) is now at `/vault/`, no longer at `/`.
+
 ## Quartz v5 — critical, non-obvious facts
 
 The repo migrated from Quartz v4 (TypeScript config) to **v5 (YAML config, npm-package plugins)**. Gotchas that will bite you:
@@ -40,7 +49,7 @@ Residual known risk: a public note linking `[[Private Note]]` leaks the *title* 
 
 ## Build note
 
-`npx quartz build` does **not** run against this repo directly. The pipeline clones Quartz at the pinned commit into `quartz-build/`, copies `quartz.config.yaml` over it, clones the vault into `quartz-build/content/`, runs `npm ci` + `npm install @quartz-themes/sanctum` + `npm run install-plugins`, then a single `npx quartz build` → `dist-public/` → GitHub Pages. There is no `package.json` in this repo — it comes from Quartz.
+`npx quartz build` does **not** run against this repo directly. The pipeline clones Quartz at the pinned commit into `quartz-build/`, copies `quartz.config.yaml` over it, clones the vault into `quartz-build/content/`, runs `npm ci` + `npm install @quartz-themes/sanctum` + `npm run install-plugins`, then a single `npx quartz build` → `dist-public/vault/`, copies this repo's `index.html` → `dist-public/index.html` (landing) → GitHub Pages. There is no `package.json` in this repo — it comes from Quartz.
 
 ## Local preview
 
