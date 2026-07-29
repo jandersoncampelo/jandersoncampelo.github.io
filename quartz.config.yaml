@@ -11,7 +11,10 @@ configuration:
   enablePopovers: true
   analytics: null
   locale: pt-BR
-  baseUrl: jandersoncampelo.github.io
+  # Garden servido sob /vault (a raiz "/" e a landing estatica index.html deste repo,
+  # copiada para dist-public/ pelo deploy.yml). Path no baseUrl -> canonical/sitemap/RSS/og
+  # apontam para .../vault; links internos do Quartz sao relativos, entao funcionam no subpath.
+  baseUrl: jandersoncampelo.github.io/vault
   # SEGURANCA: o Quartz copia arquivos nao-.md como assets SEM filtro de publish.
   # Denylist de pastas de tooling + extensoes de codigo/dados para nao vazar no publico.
   # (imagens/pdf continuam permitidos, pois sao linkados pelas notas)

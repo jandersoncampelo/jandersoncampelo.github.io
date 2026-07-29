@@ -88,7 +88,18 @@ jobs:
           $rd = Gate $cfg '@quartz-community/remove-draft'
           if (-not ($ep -eq $true -and $rd -eq $false)) { throw "GATE INVALIDO: explicit-publish=$ep remove-draft=$rd (esperado true/false) - abortando para nao vazar o vault" }
           Write-Host "Gate publico OK: explicit-publish=true, remove-draft=false"
-          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public"
+          # Garden vai para dist-public/vault; a raiz "/" e a landing estatica (index.html).
+          npx quartz build --output "$env:GITHUB_WORKSPACE/dist-public/vault"
+
+      # ---- Landing page estatica na raiz (/) ----
+      # index.html deste repo vira a home; o garden fica em /vault/.
+      - name: Copiar landing page para a raiz do site
+        shell: pwsh
+        run: |
+          Copy-Item "$env:GITHUB_WORKSPACE/index.html" "$env:GITHUB_WORKSPACE/dist-public/index.html" -Force
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE/dist-public/index.html")) { throw "Falha ao copiar index.html (landing) para dist-public/" }
+          if (-not (Test-Path "$env:GITHUB_WORKSPACE/dist-public/vault/index.html")) { throw "Build do Quartz nao gerou dist-public/vault/index.html" }
+          Write-Host "Landing em / e garden em /vault/ OK"
 
       # ---- Deploy público -> GitHub Pages ----
       - name: Setup Pages
